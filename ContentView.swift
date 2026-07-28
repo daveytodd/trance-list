@@ -5,26 +5,38 @@ struct ContentView: View {
     @StateObject private var viewModel = FeedViewModel()
 
     var body: some View {
-        NavigationView {
-            List(viewModel.videos) { video in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(video.title)
-                        .font(.headline)
-                    Text("\(video.published, formatter: dateFormatter)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Link("Watch on YouTube", destination: video.link)
-                        .font(.caption)
+        ZStack {
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0/255, green: 240/255, blue: 255/255), // neon blue
+                    Color(red: 184/255, green: 0/255, blue: 255/255) // ultraviolet purple
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            NavigationView {
+                List(viewModel.videos) { video in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(video.title)
+                            .font(.headline)
+                        Text("\(video.published, formatter: dateFormatter)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Link("Watch on YouTube", destination: video.link)
+                            .font(.caption)
+                    }
+                    .padding(.vertical, 4)
                 }
-                .padding(.vertical, 4)
+                .navigationTitle("ASOT Episodes")
+                .refreshable {
+                    await viewModel.load()
+                }
             }
-            .navigationTitle("ASOT Episodes")
-            .refreshable {
-                await viewModel.load()
+            .onAppear {
+                Task { await viewModel.load() }
             }
-        }
-        .onAppear {
-            Task { await viewModel.load() }
         }
     }
 

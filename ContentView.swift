@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct ContentView: View {
     @StateObject private var viewModel = FeedViewModel()
@@ -23,7 +24,7 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            viewModel.load()
+            Task { await viewModel.load() }
         }
     }
 
@@ -42,14 +43,17 @@ final class FeedViewModel: ObservableObject {
     private let service = RSSService()
 
     @MainActor
-    func load() {
-        service.fetchVideos { [weak self] result in
-            switch result {
-            case .success(let items):
-                self?.videos = items.sorted { $0.published > $1.published }
-            case .failure(let error):
-                print("Failed to load feed: \(error.localizedDescription)")
-                self?.videos = []
+    func load() async {
+        await withCheckedContinuation { continuation in
+            service.fetchVideos { result in
+                switch result {
+                case .success(let items):
+                    self.videos = items.sorted { $0.published > $1.published }
+                case .failure(let error):
+                    print("Failed to load feed: \(error.localizedDescription)")
+                    self.videos = []
+                }
+                continuation.resume()
             }
         }
     }
